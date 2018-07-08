@@ -25,7 +25,7 @@ func Test_ClaimHandlerV1(t *testing.T) {
 			status, http.StatusOK)
 	}
 
-	expected := "{\"status\":\"submitted\"}\n"
+	expected := "{\"message\":\"request submitted\"}\n"
 	if rr.Body.String() != expected {
 		t.Errorf("handler returned unexpected body: got %v want %v",
 			rr.Body.String(), expected)

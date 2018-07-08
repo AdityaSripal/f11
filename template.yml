@@ -1,21 +1,21 @@
-AWSTemplateFormatVersion : '2010-09-09'
-Transform: AWS::Serverless-2016-10-31
-
-Description: f11 AWS Lambda function to send tokens
+AWSTemplateFormatVersion: '2010-09-09'
+Description: F11 AWS Lambda function to send tokens
 Resources:
-  ExampleAPI:
-    Type: AWS::Serverless::Function
+  F11API:
     Properties:
-      Runtime: go1.x
-      Handler: build/f11
+      CodeUri: s3://tendermint-lambda/f11.zip
       Events:
         RootHandler:
           Type: Api
           Properties:
             Path: '/'
             Method: get
-        HelloHandler:
+        ClaimHandler:
           Type: Api
           Properties:
             Path: '/v1/claim'
             Method: get
+      Handler: build/f11
+      Runtime: go1.x
+    Type: AWS::Serverless::Function
+Transform: AWS::Serverless-2016-10-31

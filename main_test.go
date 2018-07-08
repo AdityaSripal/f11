@@ -1,8 +1,7 @@
 package main
 
 import (
-	"github.com/greg-szabo/f11/testnet"
-	"github.com/greg-szabo/f11/version"
+	"github.com/greg-szabo/f11/defaults"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -24,7 +23,7 @@ func Test_MainHandler(t *testing.T) {
 			status, http.StatusOK)
 	}
 
-	expected := "{\"name\":\"" + testnet.TestnetName + "\",\"version\":\"" + version.Version + "\"}\n"
+	expected := "{\"message\":\"\",\"name\":\"" + defaults.TestnetName + "\",\"version\":\"" + defaults.Version + "\"}\n"
 	if rr.Body.String() != expected {
 		t.Errorf("handler returned unexpected body: got %v want %v",
 			rr.Body.String(), expected)
