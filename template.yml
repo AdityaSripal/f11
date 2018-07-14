@@ -1,9 +1,13 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: F11 AWS Lambda function to send tokens
 Resources:
-  F11API:
+  LambdaFunction:
     Properties:
-      CodeUri: s3://tendermint-lambda/f11.zip
+      CodeUri: s3://tendermint-lambda/f11_gaia7000internal.zip
+      Policies: AmazonDynamoDBFullAccess
+      Environment:
+        Variables:
+          TABLE_NAME: tendermint-f11
       Events:
         RootHandler:
           Type: Api
@@ -14,8 +18,14 @@ Resources:
           Type: Api
           Properties:
             Path: '/v1/claim'
-            Method: get
+            Method: POST
+        ClaimHandlerOptions:
+          Type: Api
+          Properties:
+            Path: "/v1/claim"
+            Method: OPTIONS
       Handler: build/f11
       Runtime: go1.x
     Type: AWS::Serverless::Function
 Transform: AWS::Serverless-2016-10-31
+
