@@ -46,7 +46,7 @@ var AWSRegion = "us-east-1"
 /// Rate limiter settings
 ///
 
-var LimiterMaxRate = throttled.PerHour(3)
+var LimiterMaxRate = throttled.PerMin(60)
 
 var LimiterMaxBurst = 0
 

@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
-	"strconv"
 )
 
 type Config struct {
@@ -85,31 +84,4 @@ func GetConfigFromDB(dbSession *dynamodb.DynamoDB) (*Config, error) {
 		return nil, err
 	}
 	return &cfg, nil
-}
-
-func AddSequenceInDB(dbSession *dynamodb.DynamoDB, cfg *Config) (*Config, error) {
-	//Todo: Make sequence number increase thread-safe
-	cfg.Sequence++
-	_, err := dbSession.UpdateItem(&dynamodb.UpdateItemInput{
-		TableName: aws.String(defaults.DynamoDBTable),
-		ExpressionAttributeNames: map[string]*string{
-			"#s": aws.String("sequence"),
-		},
-		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-			":s": {
-				N: aws.String(strconv.FormatInt(cfg.Sequence, 10)),
-			},
-		},
-		Key: map[string]*dynamodb.AttributeValue{
-			defaults.DynamoDBTestnetNameColumn: {
-				S: aws.String(defaults.TestnetName),
-			},
-			defaults.DynamoDBTestnetInstanceColumn: {
-				S: aws.String(defaults.TestnetInstance),
-			},
-		},
-		ReturnValues:     aws.String("UPDATED_NEW"),
-		UpdateExpression: aws.String("set #s = :s"),
-	})
-	return cfg, err
 }

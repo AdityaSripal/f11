@@ -77,8 +77,8 @@ func LocalExecution(localCtx *context.LocalContext) {
 	srv := &http.Server{
 		Addr: fmt.Sprintf("%s:%d", localCtx.WebserverIp, localCtx.WebserverPort),
 		// Good practice to set timeouts to avoid Slowloris attacks.
-		WriteTimeout: time.Second * 15,
-		ReadTimeout:  time.Second * 15,
+		WriteTimeout: time.Second * 30,
+		ReadTimeout:  time.Second * 30,
 		IdleTimeout:  time.Second * 60,
 		Handler:      r,
 	}

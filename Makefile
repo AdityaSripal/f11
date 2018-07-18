@@ -1,11 +1,11 @@
 PACKAGES=$(shell go list ./... | grep -v '/vendor/')
 BUILD_NUMBER ?= 0-local
 TESTNET_NAME ?= localnet
-DDB_TABLE ?= ddb-f11-table
+DDB_TABLE ?= ddb-f11
 DDB_INSTANCE ?= internal
 AWS_REGION ?= us-east-1
 
-BUILD_FLAGS = -tags "netgo ledger" -ldflags "-X github.com/greg-szabo/f11/defaults.Release=${BUILD_NUMBER} -X github.com/greg-szabo/f11/defaults.DynamoDBTable=${DDB_TABLE} -X github.com/greg-szabo/f11/defaults.TestnetName=${TESTNET_NAME} -X github.com/greg-szabo/f11/defaults.TestnetInstance=${DDB_INSTANCE} -X github.com/greg-szabo/f11/defaults.AWSRegion=${AWS_REGION}"
+BUILD_FLAGS = -tags "netgo ledger" -ldflags "-extldflags \"-static\" -X github.com/greg-szabo/f11/defaults.Release=${BUILD_NUMBER} -X github.com/greg-szabo/f11/defaults.DynamoDBTable=${DDB_TABLE} -X github.com/greg-szabo/f11/defaults.TestnetName=${TESTNET_NAME} -X github.com/greg-szabo/f11/defaults.TestnetInstance=${DDB_INSTANCE} -X github.com/greg-szabo/f11/defaults.AWSRegion=${AWS_REGION}"
 
 ########################################
 ### Build
@@ -61,9 +61,10 @@ localnet-start:
 ### Release management (set up requirements manually)
 
 package:
+	if [ -z "$(S3BUCKET)" ]; then echo "Please set S3BUCKET for packaging." ; false ; fi
 	zip "build/f11_${TESTNET_NAME}.zip" build/f11 template.yml
-	aws s3 cp "build/f11_${TESTNET_NAME}.zip" "s3://tendermint-lambda/f11_${TESTNET_NAME}.zip"
-#	aws s3 cp "f11swagger.yml" "s3://tendermint-lambda/f11swagger.yml"
+	aws s3 cp "build/f11_${TESTNET_NAME}.zip" "s3://$(S3BUCKET)/f11_${TESTNET_NAME}.zip"
+#	aws s3 cp "f11swagger.yml" "s3://$(S3BUCKET)/f11swagger.yml"
 
 deploy:
 	sam deploy --template-file template.yml --stack-name "f11-${TESTNET_NAME}" --capabilities CAPABILITY_IAM --region "${AWS_REGION}"

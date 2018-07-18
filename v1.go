@@ -16,6 +16,7 @@ import (
 	"github.com/tomasen/realip"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 func V1ClaimHandler(ctx *f11context.Context, w http.ResponseWriter, r *http.Request) (status int, err error) {
@@ -61,26 +62,17 @@ func V1ClaimHandler(ctx *f11context.Context, w http.ResponseWriter, r *http.Requ
 	}
 
 	message := "transaction committed"
-	var height int64 = 0
+	var height int64
 	hash := "SendDisabled"
 	if !ctx.DisableSend {
 		height, hash, status, err = V1SendTx(ctx, encodedAddress)
 		if err != nil {
 			return
 		}
-
-		if ctx.DbSession != nil {
-			ctx.Cfg, err = config.AddSequenceInDB(ctx.DbSession, ctx.Cfg)
-			if err != nil {
-				log.Printf("critical error: could not update sequence number in database. Current value: %d, error: %v", ctx.Cfg.Sequence, err)
-			}
-		} else {
-			log.Println("DynamoDB disabled, sequence number only stored in memory.")
-		}
-	} else {
-		status = http.StatusOK
 	}
+	status = http.StatusOK
 
+	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(struct {
 		Message string `json:"message"`
 		Hash    string `json:"hash"`
@@ -144,6 +136,17 @@ func V1SendTx(ctx *f11context.Context, toBech32 string) (height int64, hash stri
 	// There's nothing to see here, move along.
 	memo := "faucet drop"
 
+	if ctx.DbSession != nil {
+		ctx.Mutex.Lock()
+		ctx.Cfg.Sequence, err = strconv.ParseInt(ctx.Mutex.Value, 10, 64)
+		if err != nil {
+			ctx.Mutex.Unlock()
+			return
+		}
+	} else {
+		log.Println("DynamoDB disabled, sequence number only stored in memory.")
+	}
+
 	// Message
 	signMsg := auth.StdSignMsg{
 		ChainID:       ctx.Cfg.TestnetName,
@@ -158,6 +161,7 @@ func V1SendTx(ctx *f11context.Context, toBech32 string) (height int64, hash stri
 	// Get private key
 	privateKeyBytes, err := config.GetPrivkeyBytesFromString(ctx.Cfg.PrivateKey)
 	if err != nil {
+		ctx.Mutex.Unlock()
 		return
 	}
 	privateKey, err := crypto.PrivKeyFromBytes(privateKeyBytes)
@@ -178,16 +182,23 @@ func V1SendTx(ctx *f11context.Context, toBech32 string) (height int64, hash stri
 	// Broadcast to Tendermint
 	txBytes, err := ctx.Cdc.MarshalBinary(tx)
 	if err != nil {
+		ctx.Mutex.Unlock()
 		return
 	}
+	log.Printf("Sending transaction sequence %s", ctx.Mutex.Value)
 	res, err := coreCtx.BroadcastTx(txBytes)
 	if err != nil {
+		ctx.Mutex.Unlock()
 		return
 	}
+	log.Printf("Sent transaction sequence %s", ctx.Mutex.Value)
 
-	status = http.StatusOK
-	height = res.Height
-	hash = res.Hash.String()
-	return
+	ctx.Cfg.Sequence++
+	if ctx.DbSession != nil {
+		ctx.Mutex.Value = strconv.FormatInt(ctx.Cfg.Sequence, 10)
+	}
+	ctx.Mutex.Unlock()
+
+	return res.Height, res.Hash.String(), http.StatusOK, nil
 
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/cosmos/cosmos-sdk/wire"
+	"github.com/greg-szabo/dsync/ddb/sync"
 	"github.com/greg-szabo/f11/config"
 	"github.com/greg-szabo/f11/defaults"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
@@ -26,6 +27,8 @@ type Context struct {
 
 	// AWS DynamoDB connection
 	DbSession *dynamodb.DynamoDB
+
+	Mutex sync.Mutex
 
 	// Application configuration
 	Cfg *config.Config
@@ -93,9 +96,9 @@ type Handler struct {
 }
 
 func (fn Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", defaults.ContentType)
 	if status, err := fn.H(fn.C, w, r); err != nil {
 		w.WriteHeader(status)
-		w.Header().Set("Content-Type", defaults.ContentType)
 		json.NewEncoder(w).Encode(ErrorMessage{err.Error()})
 		log.Printf("%d %s", status, err.Error())
 	}

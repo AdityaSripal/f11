@@ -33,6 +33,7 @@
     "aws/signer/v4",
     "internal/sdkio",
     "internal/sdkrand",
+    "internal/sdkuri",
     "internal/shareddefaults",
     "private/protocol",
     "private/protocol/json/jsonutil",
@@ -45,8 +46,8 @@
     "service/dynamodb/dynamodbattribute",
     "service/sts"
   ]
-  revision = "fefacb6d45b233a9e20097a176c1c46e85a782d3"
-  version = "v1.14.25"
+  revision = "c25475dd537f7becaf29e97c14617c8082f6b5d4"
+  version = "v1.14.28"
 
 [[projects]]
   branch = "master"
@@ -243,6 +244,12 @@
   packages = ["."]
   revision = "ea4d1f681babbce9545c9c5f3d5194a789c89f5b"
   version = "v1.2.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/greg-szabo/dsync"
+  packages = ["ddb/sync"]
+  revision = "18b0e2de69941cd6d089201e088ed6114874399c"
 
 [[projects]]
   branch = "master"
@@ -654,6 +661,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e69ac4e845bdcd193a0059847deabb5c5497e50cd79c9632e2d2aed0578843c4"
+  inputs-digest = "391db6f6f2c803afb278ec2d9c941aabdac29d584dd8d8b85983d17527994975"
   solver-name = "gps-cdcl"
   solver-version = 1

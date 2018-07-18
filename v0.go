@@ -3,21 +3,25 @@ package main
 import (
 	"encoding/json"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/cosmos/cosmos-sdk/cmd/gaia/app"
 	"github.com/dpapathanasiou/go-recaptcha"
 	"github.com/gorilla/mux"
+	"github.com/greg-szabo/dsync/ddb/sync"
 	"github.com/greg-szabo/f11/config"
 	"github.com/greg-szabo/f11/context"
 	"github.com/greg-szabo/f11/defaults"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	"log"
 	"net/http"
+	"os"
 )
 
 func MainHandler(ctx *context.Context, w http.ResponseWriter, r *http.Request) (status int, err error) {
 	status = http.StatusOK
+	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(struct {
 		Message string `json:"message"`
 		Name    string `json:"name"`
@@ -51,20 +55,31 @@ func AddRoutes(ctx *context.Context) (r *mux.Router) {
 func Initialization(useDDb bool, useRDb bool, configFile string) (ctx *context.Context, err error) {
 
 	ctx = context.New()
+	ctx.Mutex = sync.Mutex{
+		Name:      "f11",
+		AWSRegion: defaults.AWSRegion,
+	}
 
 	if useDDb {
 		log.Printf("loading config from %s table in DynamoDB", defaults.DynamoDBTable)
-		ctx.AwsSession = session.Must(session.NewSessionWithOptions(session.Options{
-			Config: aws.Config{
-				Region: aws.String(defaults.AWSRegion),
-			},
-		},
-		))
+
+		awsCfg := aws.Config{
+			Region: aws.String(defaults.AWSRegion),
+		}
+
+		// Use IAM or environment variables credential
+		if (os.Getenv("AWS_ACCESS_KEY_ID") != "" && os.Getenv("AWS_SECRET_ACCESS_KEY") != "") ||
+			(os.Getenv("AWS_ACCESS_KEY") != "" && os.Getenv("AWS_SECRET_KEY") != "") {
+			awsCfg.Credentials = credentials.NewEnvCredentials()
+		}
+
+		ctx.AwsSession = session.Must(session.NewSessionWithOptions(session.Options{Config: awsCfg}))
 		ctx.DbSession = dynamodb.New(ctx.AwsSession)
 		ctx.Cfg, err = config.GetConfigFromDB(ctx.DbSession)
 		if err != nil {
 			return
 		}
+
 	} else {
 		log.Printf("loading config from %s file", configFile)
 		ctx.Cfg, err = config.GetConfigFromFile(configFile)
