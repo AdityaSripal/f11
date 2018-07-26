@@ -11,7 +11,7 @@ import (
 	"github.com/dpapathanasiou/go-recaptcha"
 	"github.com/greg-szabo/f11/config"
 	f11context "github.com/greg-szabo/f11/context"
-	"github.com/tendermint/tendermint/crypto"
+	cryptoAmino "github.com/tendermint/tendermint/crypto/encoding/amino"
 	"github.com/tendermint/tendermint/libs/bech32"
 	"github.com/tomasen/realip"
 	"log"
@@ -164,7 +164,7 @@ func V1SendTx(ctx *f11context.Context, toBech32 string) (height int64, hash stri
 		ctx.Mutex.Unlock()
 		return
 	}
-	privateKey, err := crypto.PrivKeyFromBytes(privateKeyBytes)
+	privateKey, err := cryptoAmino.PrivKeyFromBytes(privateKeyBytes)
 
 	// Sign message
 	sig, err := privateKey.Sign(bz)
